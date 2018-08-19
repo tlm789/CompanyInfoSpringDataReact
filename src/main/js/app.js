@@ -8,6 +8,8 @@ const Col = require('react-bootstrap/lib/Col');
 const Panel = require('react-bootstrap/lib/Panel');
 const when = require('when');
 const client = require('./client');
+const DropdownButton = require('react-bootstrap/lib/DropdownButton');
+const MenuItem = require('react-bootstrap/lib/MenuItem');
 
 
 
@@ -21,10 +23,12 @@ class App extends React.Component {
 	
 	constructor(props){
 		super(props);
-		this.state = {companyInfo: []};
+		this.state = {companyInfo: [], attributes: [], pageSize: 2, links: {}};
+		//this.state = {companyInfo: []};
 		this.onCreate = this.onCreate.bind(this);
+		this.getStockData = this.getStockData.bind(this);
 		//this.handleSubmit = this.handleSubmit.bind(this);
-		this.state.pageSize = 2;
+		//this.state.pageSize = 2;
 		this.getInfo = this.getInfo.bind(this);
 		
 	}
@@ -37,8 +41,8 @@ class App extends React.Component {
 		follow(client, root, ['companyInformations']).then(companyCollection => {
 			return client({
 				method: 'POST',
-				path: companyCollection.entity._links.self.href,
-				//path: companyCollection.entity._links.self.href/findInfo;
+				//path: companyCollection.entity._links.self.href,	
+				path: 'api/companyInformations/findInfo',
 				entity: newCompanyInfo,
 				headers: {'Content-Type': 'application/json'}
 			});
@@ -67,37 +71,69 @@ class App extends React.Component {
 		
 	}
 	
+	getStockData(code,compInfo){
+		console.log("in getStockData");
+		
+		follow(client, root, ['companyInformations']).then(companyCollection => {
+			return client({
+				method: 'POST',
+				//path: companyCollection.entity._links.self.href,	
+				path: 'api/companyInformations/findStockData',
+				entity: code, compInfo,
+				headers: {'Content-Type': 'application/json'}
+			});
+		}).then(response => {
+			return follow(client, root, [
+				{rel: 'companyInformations', params: {'size': this.state.pageSize}}
+			]);
+		})
+		.done(response => {
+			
+			this.getInfo();
+			console.log("the stocks are " + this.state.companyInfo.stock);
+		})
+	}
+	
 	
 	
 	
 	getInfo(){
-		//newCompanyInfo: [];
+		
 	
-		client({method: 'GET', path: '/api/companyInformations'}).done(response => {
+		/*client({method: 'GET', path: '/api/companyInformations'}).done(response => {
 			this.setState({companyInfo: response.entity._embedded.companyInformations});
+			//this.setState({companyInfo: response.entity});
+		});*/
+		
+		follow(client, root, [
+			{rel: 'companyInformations', params: {size: this.pageSize}}
+		]).then(companyCollection => {
+			return client({
+				method: 'GET',
+				path: companyCollection.entity._links.profile.href,
+				headers: {'Accept' : 'application/schema+json'}
+			}).then(schema =>{
+				this.schema = schema.entity;
+				return companyCollection;
+			});
+		}).done(companyCollection =>{
+			this.setState({
+				companyInfo: companyCollection.entity._embedded.companyInformations,
+				attributes: Object.keys(this.schema.properties),
+				pageSize: this.pageSize,
+				links: companyCollection.entity._links
+			});
 		});
-			/*for(var type in response.entity._embedded.companyInformations.types){
-				if(type == 1) {
-					newCompanyInfo.name = response.entity._embedded.companyInformations.name;
-				}
-				if(type == 2) {
-					newCompanyInof.financialData = response.entity._embedded.companyInformations.name;
-				}
-				if(type == 3) {
-					newCompanyInof.location = response.entity._embedded.companyInformations.location;
-				}
-				if(type == 4) {		
-					newCompanyInof.CEO = response.entity._embedded.companyInformations.CEO;
-				}
-				if(type == 5) { 
-					newCompanyInof.reviews = response.entity._embedded.companyInformations.reviews;
-				}
-			}*/
-			//this.setState({companyInfo: newCompanyInfo});
+			
 			
 		
 	}
 	
+	/*updatePageSize(pageSize) {
+		if (pageSize !== this.state.pageSize) {
+			this.loadFromServer(pageSize);
+		}
+	}*/
 	
 	componentDidUpdate(){
 		
@@ -122,9 +158,7 @@ class App extends React.Component {
 	}
 	
 	componentDidMount() {
-		this.getInfo();
-		
-		
+		this.getInfo();		
 		console.log("in componentDidMount");
 		console.log("length of state array is "+ this.state.companyInfo.length);
 		for(var i = 0; i< this.state.companyInfo.length; i++){
@@ -138,7 +172,7 @@ class App extends React.Component {
 		return (
 			<div>
 				<Search onCreate={this.onCreate} />
-				<CompanyInfoTable companyInfo={this.state.companyInfo} />				
+				<CompanyInfoTable companyInfo={this.state.companyInfo} getStockData={this.getStockData} />				
 			</div>
 		)
 	}
@@ -167,10 +201,103 @@ class App extends React.Component {
 }*/
 
 class InfoRow extends React.Component {
-
+		
+	constructor(props) {
+	    super(props);
+	    this.state = {
+	    		stockData: {[]};
+	    }
+	    this.handleSelect = this.handleSelect.bind(this);
+	    this.getStockData = this.props.getStockData;
+	    
+	}
+	
+	//create post to worldtrade data
+	handleSelect(eventKey) {
+	    event.preventDefault();
+	    console.log("the checked key is " + eventKey);
+	   /* fetch('https://www.worldtradingdata.com/api/v1/history?symbol='+eventKey+'&sort=newest&date_from=2013-01-01&api_token=VmOBMNET2yGQC66i6vVFsu88vhLSj9rLk9kOZDaaIXUUMBvRxDnApmvzA44v')
+	    .then(result=>result.json())
+	    .then(stockData=>this.setState({stockData}))
+	    .then(console.log(this.state.stockData))*/
+	    //this.getStockData(eventKey,this.props.compInfo);
+	  }
+	
 	render() {
 			
+		
+		/*const stockCodes = this.props.compInfo.stockCodes.map((item) => {
+			
+		        	return <option key = {item.symbol}>{item.name},{item.currency}</option>
+		})
+		
+		
+		
+		const stockCodeForm = [];
+		stockCodeForm.push(
+			 <div><label htmlFor = "codes" className = "labels">Choose stocks</label> 
+			 <select multiple={true}  id = "stockCodeMultiSelect" name = "stockCodes" ref = "stockCodes" style={{width: 100 + '%'}}>
+			 {stockCodes}
+			 </select></div>
+		)*/
+		
+		
+		const stockCurrencyCodes = this.props.compInfo.stockCodes.map((item) => {		
+        	return <MenuItem key = eventKey={item.symbol}>{item.name}, {item.currency}</MenuItem>    	
+			})
+			
+		
+		const stockCodeDropdown = [];
+		const stockData = [];
+		
+		if(this.props.compInfo.stockCodes !== undefined && this.props.compInfo.stockCodes.length > 0){
+			stockCodeDropdown.push(
+					<DropdownButton
+						bsStyle="info"
+				      title="Select Currency for Stock Options to Display"
+				      
+				      id="stockCodesDropdown"  
+				    	  onSelect = {this.handleSelect}
+				    	  
+				    >
+				     {	stockCurrencyCodes
+				     }
+				    </DropdownButton>	
+				   
+			);
+		}else{
+			stockCodeDropdown.push("");
+		}
+		
+		
+		if(this.props.compInfo.stock != undefined){
+			stockData.push(this.props.compInfo.stock.stocks);
+			
+		}else{
+			stockData.push("");
+		}
+		if(this.props.compInfo.stock  != undefined){
+			for(var i = 0; i<stockData.length; i++){
+				console.log("the stockData stocks are" + stockData["stocks"].name);
+			}
+		}
+		
+		/*function renderDropdownButton() {
+  return (
+    <DropdownButton
+      bsStyle="Info"
+      title="Select Currency to Display"
+      key={i}
+      id="stockCodesDropdown"   	  
+    >
+     
+    </DropdownButton>
+  );
+}*/
+		
+		
 		return (
+				 
 				
 	<Panel bsStyle = "info" id = "collapsible-panel-example-2" defaultExpanded>	
 		<Panel.Heading>
@@ -189,11 +316,24 @@ class InfoRow extends React.Component {
 								<td>{this.props.compInfo.wiki}</td>
 							</tr>
 							<tr>
-								<td>financial Data:</td>
+								<td>Stock Data:</td>
 							</tr>
 							<tr>
-								<td>{this.props.compInfo.financialData}</td>
+								<td>
+							
+					      			{stockCodeDropdown}
+					      			
+								</td>
+								
 							</tr>
+							<tr>
+							<td>
+						
+				      			{stockData}
+				      	   
+							</td>
+							
+						</tr>
 							<tr>
 								<td>Location:</td>
 							</tr>
@@ -222,6 +362,7 @@ class CompanyInfoTable extends React.Component {
 		super(props);
 		this.state = {companyInfo: this.props.companyInfo,
 						length: this.props.companyInfo.length};
+		this.getStockData = this.props.getStockData;
 		
 	}
 	
@@ -233,10 +374,12 @@ class CompanyInfoTable extends React.Component {
 		}
 		
 	}
+	
+	
+		  
 
 	render() {
-		
-		
+			
 		console.log("in companyInfoTAble the length of state array is "+ this.state.length);
 		
 		for(var i = 0; i< this.state.length; i++){
@@ -244,18 +387,19 @@ class CompanyInfoTable extends React.Component {
 			console.log("the companyInfo array wiki is: "+ this.state.companyInfo[i].wiki);
 		}
 		
+		//add if info.stockCodes then push the form and data
 		const rows = [];	
 				
 		if(this.state.companyInfo != null){
 			
 			this.state.companyInfo.forEach((info) => {
 			rows.push (
-				<InfoRow compInfo = {info}
+				<InfoRow compInfo = {info} getStockData = {this.getStockData}
 				key = {info._links.self.href} />
 			);	
 	});
 	return (
-			
+		
 		<Grid>
 		<br/>
 			<Row>
@@ -380,10 +524,11 @@ class Search extends React.Component{
       			<label htmlFor = "types" className = "labels">Choose the type of information</label> 
       			<select multiple={true} id = "myMultiselect" name = "types" ref = "types" style={{width: 100 + '%'}}>    
       				<option value = "1">Company Overview</option>
-      				<option value = "2">Financial Data</option>
-      				<option value = "3">Location</option>
-      				<option value = "4">Reviews</option>
-      				<option value = "5">CEO</option>
+      				<option value = "2">Latest Stock Price plus Last 5-Year Historical Prices</option>
+      				<option value = "3">Financial Data</option>
+      				<option value = "4">Location</option>
+      				<option value = "5">Reviews</option>
+      				<option value = "6">CEO</option>
       				</select>
       		</Col>  
   

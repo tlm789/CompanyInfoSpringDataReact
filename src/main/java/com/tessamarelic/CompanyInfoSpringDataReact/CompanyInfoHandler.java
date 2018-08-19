@@ -23,7 +23,7 @@ public class CompanyInfoHandler {
 			this.repository = repository;
 		}*/
 		
-		@HandleBeforeSave(CompanyInformation.class) public void handleBeforeSave(CompanyInformation company) {
+		/*@HandleBeforeSave(CompanyInformation.class) public void handleBeforeSave(CompanyInformation company) {
 			
 			
 			String name = company.getName();
@@ -55,7 +55,7 @@ public class CompanyInfoHandler {
 			}
 			}
 				//repository.save(company);
-		}
+		}*/
 
 		
 }

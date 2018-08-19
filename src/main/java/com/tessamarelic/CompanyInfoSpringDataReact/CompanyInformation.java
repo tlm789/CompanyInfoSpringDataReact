@@ -1,12 +1,18 @@
 package com.tessamarelic.CompanyInfoSpringDataReact;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import javax.annotation.PostConstruct;
+import javax.json.JsonObject;
+import javax.persistence.Column;
+import javax.persistence.ElementCollection;
+import javax.persistence.EmbeddedId;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 
+import org.json.simple.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import lombok.Data; //auto generates getters, setters, constructors etc
@@ -19,19 +25,30 @@ import lombok.Data; //auto generates getters, setters, constructors etc
 @Entity //JPA annotation that denotes whole class for storage
 public class CompanyInformation {
 	
+	//@EmbeddedId
+	//private CompanyIdentity compIdentity;
 	private @Id @GeneratedValue Long id; //auto generated primary key
+	//private @GeneratedValue Long id;
 	private ArrayList<Integer> types = new ArrayList<Integer>();
 	private String name;
-	private String wiki = findWikiInfo(name);
+	/*private String wiki = findWikiInfo(name);
 	private String financialData = findFinancialData(name) ;
 	private String location = findLocation(name);
 	private String CEO = findCEO(name);
-	private ArrayList<String> reviews = findReviews(name);
-	/*private String wiki;
+	private ArrayList<String> reviews = findReviews(name);*/
+	@Column(length = 2000)
+	private String wiki;
+	
+	@ElementCollection(targetClass=StockList.class)
+	private List<StockList> stockCodes;
+	
+	@Column
+	private JSONObject stock;
+	
 	private String financialData;
 	private String location;
 	private String CEO;
-	private ArrayList<String> reviews = new ArrayList<String>();*/
+	private ArrayList<String> reviews = new ArrayList<String>();
 	
 	
 	public CompanyInformation () {
@@ -43,40 +60,18 @@ public class CompanyInformation {
 	
 	public CompanyInformation(String name, ArrayList<Integer>types)
 	{
-		
 		this.name = name;
 		this.types = types;
-		/*this.wiki = wiki;
-		this.financialData = financialData;
-		this.location = location;
-		this.CEO = CEO;
-		this.reviews = reviews;*/
-		//APIService apiService = new APIService();
 		
-		//APIService apiService = new APIService();
-		/*for(int type : this.types) {
-			if(type == 1) {
-				this.wiki = findWikiInfo(name);
-				//setWiki(wiki);
-			}
-			if(type == 2) {
-				this.financialData = findFinancialData(name);
-				//setFinancialData(financialData);
-			}
-			if(type == 3) {
-				this.location = findLocation(name);
-				//setLocation(location);
-			}
-			if(type == 4) {		
-				this.CEO=findCEO(name);
-				//setCEO(CEO);
-			}
-			if(type == 5) { 
-				this.reviews=findReviews(name);
-				//setReviews(reviews);
-			}
-		}*/
-		
+	}
+
+	
+	public List<StockList> getStockCodes() {
+		return stockCodes;
+	}
+
+	public void setStockCodes(List<StockList> stockCodes) {
+		this.stockCodes = stockCodes;
 	}
 
 	public Long getId() {
@@ -145,6 +140,15 @@ public class CompanyInformation {
 		this.financialData = financialData;
 	}
 	
+	
+	public JSONObject getStock() {
+		return stock;
+	}
+
+	public void setStock(JSONObject obj) {
+		this.stock = obj;
+	}
+
 	public String findWikiInfo(String name){
 		String wiki = "test wiki";
 		return wiki;
